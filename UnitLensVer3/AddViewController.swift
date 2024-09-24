@@ -9,7 +9,7 @@ import UIKit
 import RealmSwift
 import PhotosUI
 
-class AddViewController: UIViewController, PHPickerViewControllerDelegate {
+class AddViewController: UIViewController, PHPickerViewControllerDelegate, UITextFieldDelegate {
     
     let realm = try! Realm()
     @IBOutlet var uniqueUnitValue: UITextField!
@@ -36,31 +36,34 @@ class AddViewController: UIViewController, PHPickerViewControllerDelegate {
     override func viewDidLoad() {
         super.viewDidLoad()
         
+        uniqueUnitValue.delegate = self
+        unitName.delegate = self
+        originalUnitValue.delegate = self
         
+        // Add target to text fields for real-time conversion rate update
+        uniqueUnitValue.addTarget(self, action: #selector(textFieldDidChange(_:)), for: .editingChanged)
+        originalUnitValue.addTarget(self, action: #selector(textFieldDidChange(_:)), for: .editingChanged)
+        unitName.addTarget(self, action: #selector(textFieldDidChange(_:)), for: .editingChanged)
         
+        // Setup other UI elements
         units = fetchUnits(unitType: unitType)
-        
         unitButtonSetTitle()
-        
         setupUnitButtonMenu()
-        
         conversionDataArray = fetchConversionData()
         
+        // Round labels and buttons
         label1.layer.cornerRadius = 22.0
         label1.clipsToBounds = true
         label2.layer.cornerRadius = 22.0
         label2.clipsToBounds = true
-        
         conversionRateLabel.layer.cornerRadius = 22.0
         conversionRateLabel.clipsToBounds = true
         label.layer.cornerRadius = 22.0
         label.clipsToBounds = true
         imageUploadButton.layer.cornerRadius = 22.0
         imageUploadButton.clipsToBounds = true
-        
         uniqueUnitValue.layer.cornerRadius = 20.0
         originalUnitValue.layer.cornerRadius = 20.0
-        
     }
     
     override func viewDidLayoutSubviews() {
@@ -199,8 +202,9 @@ class AddViewController: UIViewController, PHPickerViewControllerDelegate {
     func setupUnitButtonMenu() {
         let actions = units.map { unit in
             UIAction(title: unit, image: nil) { _ in
+                self.unitButton.setTitle(unit, for: .normal)  // First update the button title
+                self.updateConversionRateLabel(selectedUnit: unit)  // Pass selected unit directly
                 print("\(unit) selected")
-                self.unitButton.setTitle(unit, for: .normal)
             }
         }
         
@@ -223,6 +227,27 @@ class AddViewController: UIViewController, PHPickerViewControllerDelegate {
             break
         }
         return stringArray
+    }
+    
+    func updateConversionRateLabel(selectedUnit: String? = nil) {
+        guard let unitKey = unitName.text, !unitKey.isEmpty,
+              let inputUniqueText = uniqueUnitValue.text, let inputUnique = Double(inputUniqueText),
+              let inputOriginalText = originalUnitValue.text, let inputOriginal = Double(inputOriginalText) else {
+            conversionRateLabel.text = "Please fill out all fields"
+            return
+        }
+        
+        // Use the selected unit if provided, else fallback to the button title
+        let originalUnitTitle = selectedUnit ?? unitButton.titleLabel?.text ?? ""
+        
+        let conversionRate = conversionAlgorithm.conversionRateCalculator(inputUniqueValue: inputUnique, inputOriginalValue: inputOriginal, originalUnitName: originalUnitTitle)
+        let convertToBase = conversionAlgorithm.convertToBaseString(inputUnitType: unitType)
+        conversionRateLabel.text = "\(conversionRate) \(unitKey)/\(convertToBase)"
+    }
+    
+    
+    @objc func textFieldDidChange(_ textField: UITextField) {
+        updateConversionRateLabel()
     }
     
 }
