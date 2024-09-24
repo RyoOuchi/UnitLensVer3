@@ -39,6 +39,8 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
             print(unit)
         }
         
+        addPaddingToTextField(textField: unitInput)
+        
         unitButton.setTitle(conversionAlgorithm.convertToBaseString(inputUnitType: unitTypeArray[unitTypeArrayID]), for: .normal)
         
         units = fetchUnits(unitType: unitTypeArray[unitTypeArrayID])
@@ -89,6 +91,12 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
         self.view.addGestureRecognizer(swipeLeft)
         
         unitButton.contentHorizontalAlignment = .left
+    }
+    
+    func addPaddingToTextField(textField: UITextField) {
+        let paddingView = UIView(frame: CGRect(x: 0, y: 0, width: 10, height: textField.frame.height))
+        textField.leftView = paddingView
+        textField.leftViewMode = .always
     }
     
     //Unit type changer
@@ -385,6 +393,7 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
             let inputDouble = Double(unitInput.text ?? "0")
             resultVC.inputFromVC = inputDouble ?? 0
             resultVC.uniqueUnitName = sendToResultVCName
+            resultVC.currentUnit = unitButton.titleLabel?.text ?? "nil"
         default:
             break
         }

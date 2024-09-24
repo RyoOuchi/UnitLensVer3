@@ -54,6 +54,7 @@ class Converter {
         conversionGraph[toUnit]?.append(ConversionEdge(unit: fromUnit, factor: 1 / factor))
     }
 
+    //This function returns: value * toUnit/fromUnit
     func convert(value: Double, fromUnit: String, toUnit: String) -> Double? {
         if !areUnitsInSameCategory(unit1: fromUnit, unit2: toUnit) {
             print("Units are from different categories and cannot be converted.")
@@ -145,4 +146,8 @@ class Converter {
         return convertToBaseString(inputUnitType: getUnitCategory(for: originalUnitInput)!)
     }
     
+    func baseUnitToOtherUnit(conversionRate: Double, baseUnit: String, otherUnit: String) -> Double{
+        guard let unitConversionConstant = convert(value: 1, fromUnit: otherUnit, toUnit: baseUnit) else { return 0 }
+        return conversionRate * unitConversionConstant
+    }
 }

@@ -151,7 +151,7 @@
                                 <color key="textColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                 <nil key="highlightedColor"/>
                             </label>
-                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="tqT-Tm-uGk">
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="Label" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="tqT-Tm-uGk">
                                 <rect key="frame" x="288" y="298" width="63" height="46"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                 <fontDescription key="fontDescription" type="system" pointSize="17"/>
@@ -189,6 +189,7 @@
                         <outlet property="inputUniqueTextField" destination="Qvr-zl-b6d" id="4Tt-by-1mk"/>
                         <outlet property="layerLabel" destination="W0S-mY-MsW" id="h9i-Z0-rib"/>
                         <outlet property="uniqueUnitNameLabel" destination="tqT-Tm-uGk" id="9Rg-uX-8l0"/>
+                        <outlet property="unitButton" destination="7Lp-xj-yqK" id="eKr-43-DPh"/>
                         <outlet property="unitTypeImage" destination="e5J-Ci-5za" id="oyl-9M-y78"/>
                     </connections>
                 </viewController>
