@@ -17,15 +17,23 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
     var unitTypeNow: String = ""
     var changeButton: UIButton!
     @IBOutlet var unitButton: UIButton!
-    var segueVariable: Int = 0
     var units: [String] = []
     var inputValue: Double = 0
     let conversionAlgorithm = Converter()
+    var sendToResultVCName: String = ""
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        
+        tableView.reloadData()
+    }
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
         unitInput.delegate = self
+        unitInput.layer.cornerRadius = 5.0
+        unitButton.clipsToBounds = true
         
         conversionData.forEach { unit in
             print(unit)
@@ -356,8 +364,17 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
         return 80
     }
     
+    //sending information to ResultViewController
+    
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        segueVariable = indexPath.row
+        //segueVariable = indexPath.row
+        
+        let currentUnitBase = conversionAlgorithm.convertToBaseString(inputUnitType: unitTypeArray[unitTypeArrayID])
+        let filteredConversionData = filterConversionData(byBaseUnit: currentUnitBase)
+        let unit = filteredConversionData[indexPath.row]
+        
+        sendToResultVCName = unit.unitKey
+        
         performSegue(withIdentifier: "toResult", sender: self)
     }
     
@@ -365,29 +382,20 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
         switch segue.identifier {
         case "toResult":
             let resultVC = segue.destination as! ResultViewController
-            resultVC.fromSenderVariable = segueVariable
+            let inputDouble = Double(unitInput.text ?? "0")
+            resultVC.inputFromVC = inputDouble ?? 0
+            resultVC.uniqueUnitName = sendToResultVCName
         default:
             break
         }
     }
-    //table view
     
     //realm fetch functions
     func fetchConversionData() -> [ConversionData]{
         return Array(realm.objects(ConversionData.self))
     }
     
-    //updating textfield
-//    func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
-//        print(unitInput.text)
-//        tableView.reloadData()
-//        
-//        
-//        return true
-//    }
-//    
-
-    
+    //Activates when the user presses return on their keypad
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
         textField.resignFirstResponder()
         tableView.reloadData()
