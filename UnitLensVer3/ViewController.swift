@@ -17,9 +17,17 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
     var changeButton: UIButton!
     @IBOutlet var unitButton: UIButton!
     var segueVariable: Int = 0
+    var units: [String] = []
+    let conversionAlgorithm = Converter()
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        unitButton.setTitle(conversionAlgorithm.convertToBaseString(inputUnitType: unitTypeArray[unitTypeArrayID]), for: .normal)
+        
+        units = fetchUnits(unitType: unitTypeArray[unitTypeArrayID])
+        
+        setupUnitButtonMenu()
         
         tableView.backgroundColor = .clear
         
@@ -37,7 +45,7 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
         
         changeButton = UIButton(type: .system)
         
-        if let image = UIImage(named: "time.png")?.withRenderingMode(.alwaysOriginal) {
+        if let image = UIImage(named: unitTypeArray[unitTypeArrayID])?.withRenderingMode(.alwaysOriginal) {
             changeButton.setImage(image, for: .normal)
         } else {
             print("No such image")
@@ -65,17 +73,6 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
         self.view.addGestureRecognizer(swipeLeft)
         
         unitButton.contentHorizontalAlignment = .left
-        let option1 = UIAction(title: "Option 1", image: UIImage(systemName: "1.circle")) { _ in
-            print("Option 1 selected")
-        }
-        
-        let option2 = UIAction(title: "Option 2", image: UIImage(systemName: "2.circle")) { _ in
-            print("Option 2 selected")
-        }
-        
-        let menu = UIMenu(title: "", children: [option1, option2])
-        unitButton.menu = menu
-        unitButton.showsMenuAsPrimaryAction = true
     }
     
     //Unit type changer
@@ -133,10 +130,47 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
             if let newImage = UIImage(named: "\(self.unitTypeArray[self.unitTypeArrayID]).png")?.withRenderingMode(.alwaysOriginal) {
                 self.changeButton.setImage(newImage, for: .normal)
             }
+            
+            // Fetch updated units for the selected unit type and rebuild the menu
+            self.units = self.fetchUnits(unitType: self.unitTypeArray[self.unitTypeArrayID])
+            self.setupUnitButtonMenu()  // Rebuild the menu based on the updated units
         }
         
         print("Button tapped: \(buttonIdentifier), unitTypeArrayID updated to \(unitTypeArrayID)")
+        unitButton.setTitle(conversionAlgorithm.convertToBaseString(inputUnitType: unitTypeArray[unitTypeArrayID]), for: .normal)
         deleteBlurView()
+    }
+
+    func setupUnitButtonMenu() {
+        // Ensure the units array is populated before setting up the menu
+        guard !units.isEmpty else { return }
+        
+        let actions = units.map { unit in
+            UIAction(title: unit, image: nil) { _ in
+                self.unitButton.setTitle(unit, for: .normal)  // First update the button title
+                print("\(unit) selected")
+            }
+        }
+        
+        let menu = UIMenu(title: "Select Unit", children: actions)
+        
+        unitButton.menu = menu
+        unitButton.showsMenuAsPrimaryAction = true
+    }
+    
+    func fetchUnits(unitType: String) -> [String] {
+        var stringArray: [String] = []
+        switch unitType{
+        case "length":
+            stringArray = conversionAlgorithm.length
+        case "weight":
+            stringArray = conversionAlgorithm.weight
+        case "time":
+            stringArray = conversionAlgorithm.time
+        default:
+            break
+        }
+        return stringArray
     }
     
     func blurScreenAndShowButtons() {
@@ -304,5 +338,7 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
     func fetchConversionData() -> [ConversionData]{
         return Array(realm.objects(ConversionData.self))
     }
+    
+
     
 }
