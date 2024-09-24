@@ -1,10 +1,11 @@
 import UIKit
 import RealmSwift
 
-class ViewController: UIViewController, UITableViewDataSource, UITableViewDelegate {
+class ViewController: UIViewController, UITableViewDataSource, UITableViewDelegate, UITextFieldDelegate {
     
     let realm = try! Realm()
     @IBOutlet var tableView: UITableView!
+    @IBOutlet var unitInput: UITextField!
     @IBOutlet var addUnit: UIBarButtonItem!
     @IBOutlet var changeUnit: UIBarButtonItem!
     let unitTypeArray: [String] = ["length", "weight", "time"]
@@ -18,10 +19,17 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
     @IBOutlet var unitButton: UIButton!
     var segueVariable: Int = 0
     var units: [String] = []
+    var inputValue: Double = 0
     let conversionAlgorithm = Converter()
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        unitInput.delegate = self
+        
+        conversionData.forEach { unit in
+            print(unit)
+        }
         
         unitButton.setTitle(conversionAlgorithm.convertToBaseString(inputUnitType: unitTypeArray[unitTypeArrayID]), for: .normal)
         
@@ -138,6 +146,7 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
         
         print("Button tapped: \(buttonIdentifier), unitTypeArrayID updated to \(unitTypeArrayID)")
         unitButton.setTitle(conversionAlgorithm.convertToBaseString(inputUnitType: unitTypeArray[unitTypeArrayID]), for: .normal)
+        tableView.reloadData()
         deleteBlurView()
     }
 
@@ -283,21 +292,50 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
     
     //table view
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return conversionData.count
+        let currentUnitBase = conversionAlgorithm.convertToBaseString(inputUnitType: unitTypeArray[unitTypeArrayID])
+        let filteredConversionData = filterConversionData(byBaseUnit: currentUnitBase)
+        print("\(filteredConversionData.count)")
+        return filteredConversionData.count
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let currentUnitBase = conversionAlgorithm.convertToBaseString(inputUnitType: unitTypeArray[unitTypeArrayID])
+        print("Current Unit Base: \(currentUnitBase)")
+        
+        let filteredConversionData = filterConversionData(byBaseUnit: currentUnitBase)
+        print("Filtered Data: \(filteredConversionData), IndexPath Row: \(indexPath.row)")  // Check if data is filtered correctly
+
         let cell = tableView.dequeueReusableCell(withIdentifier: "UnitCell") as! ViewTableViewCell
-        let unitData: ConversionData = conversionData[indexPath.row]
-        let unitLabelText = unitData.unitKey
-        let unitConversionRate = unitData.conversionRate
-        let image = unitData.unitImage ?? UIImage(systemName: "nosign")!
-        cell.setCell(unitLabel: unitLabelText, unitValue: unitConversionRate, unitImage: image)
-        conversionData.forEach { unit in
-            print(unit)
+        
+        let unit: ConversionData = filteredConversionData[indexPath.row]
+        let image = unit.unitImage ?? UIImage(systemName: "nosign")!
+        
+        if let inputText = unitInput.text, let inputValue = Double(inputText), let unitTitle = unitButton.currentTitle {
+            print("Input Text: \(inputText), Unit Title: \(unitTitle)")
+            
+            let baseUnitType = conversionAlgorithm.convertToBaseString(inputUnitType: unitTitle)
+            print("unit.convertToKey: \(unit.convertToKey), baseUnitType: \(baseUnitType)")
+            
+            if conversionAlgorithm.convertToBaseString(inputUnitType: unit.convertToKey) == baseUnitType {
+                if let conversionValue = conversionAlgorithm.convert(value: inputValue, fromUnit: unitTitle, toUnit: unit.convertToKey) {
+                    let amount = unit.conversionRate * conversionValue
+                    print("Conversion Value: \(conversionValue), Amount: \(amount)")
+                    cell.setCell(unitLabel: unit.unitKey, unitValue: amount, unitImage: image)
+                    print("Set cell with label: \(unit.unitKey), value: \(amount)")
+                }
+            } else {
+                print("Conversion condition not met")
+            }
+        } else {
+            print("Invalid input or unit title")
         }
         
         return cell
+    }
+    
+    func filterConversionData(byBaseUnit baseUnit: String) -> [ConversionData] {
+        let filteredData = conversionData.filter { $0.convertToKey == baseUnit }
+        return filteredData
     }
     
     func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
@@ -337,6 +375,23 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
     //realm fetch functions
     func fetchConversionData() -> [ConversionData]{
         return Array(realm.objects(ConversionData.self))
+    }
+    
+    //updating textfield
+//    func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
+//        print(unitInput.text)
+//        tableView.reloadData()
+//        
+//        
+//        return true
+//    }
+//    
+
+    
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        textField.resignFirstResponder()
+        tableView.reloadData()
+        return true
     }
     
 

@@ -71,6 +71,7 @@
                         <outlet property="changeUnit" destination="icD-JH-Bjm" id="QUJ-Y7-5n7"/>
                         <outlet property="tableView" destination="cwR-OX-QKZ" id="b63-6O-KOp"/>
                         <outlet property="unitButton" destination="WhI-f6-7Gt" id="jHj-1O-CCM"/>
+                        <outlet property="unitInput" destination="Tl8-t4-Lv7" id="HT3-aX-dHC"/>
                         <segue destination="4H7-GY-FoY" kind="show" identifier="toResult" id="W9n-6V-qaf"/>
                     </connections>
                 </viewController>
