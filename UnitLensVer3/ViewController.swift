@@ -327,6 +327,11 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
         let unit: ConversionData = filteredConversionData[indexPath.row]
         let image = unit.unitImage ?? UIImage(systemName: "nosign")!
         
+        // Always set the unit label and image
+        cell.setCell(unitLabel: unit.unitKey, unitValue: 0, unitImage: image)
+        print("Set cell with label: \(unit.unitKey), image: \(image)")
+
+        // Only proceed with value calculation if there's valid input
         if let inputText = unitInput.text, let inputValue = Double(inputText), let unitTitle = unitButton.currentTitle {
             print("Input Text: \(inputText), Unit Title: \(unitTitle)")
             
@@ -337,8 +342,9 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
                 if let conversionValue = conversionAlgorithm.convert(value: inputValue, fromUnit: unitTitle, toUnit: unit.convertToKey) {
                     let amount = unit.conversionRate * conversionValue
                     print("Conversion Value: \(conversionValue), Amount: \(amount)")
+                    // Update the cell with the calculated value
                     cell.setCell(unitLabel: unit.unitKey, unitValue: amount, unitImage: image)
-                    print("Set cell with label: \(unit.unitKey), value: \(amount)")
+                    print("Updated cell with label: \(unit.unitKey), value: \(amount)")
                 }
             } else {
                 print("Conversion condition not met")
@@ -349,6 +355,7 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
         
         return cell
     }
+
     
     func filterConversionData(byBaseUnit baseUnit: String) -> [ConversionData] {
         let filteredData = conversionData.filter { $0.convertToKey == baseUnit }
