@@ -206,7 +206,7 @@ class AddViewController: UIViewController, PHPickerViewControllerDelegate, UITex
             realm.add(newConversionData)
         }
         
-        dismiss(animated: true)
+        self.navigationController?.popViewController(animated: true)
     }
 
 
