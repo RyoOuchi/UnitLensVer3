@@ -24,8 +24,9 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        
+        conversionData = fetchConversionData()
         tableView.reloadData()
+        
     }
     
     override func viewDidLoad() {

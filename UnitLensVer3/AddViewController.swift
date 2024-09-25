@@ -64,16 +64,12 @@ class AddViewController: UIViewController, PHPickerViewControllerDelegate, UITex
         imageUploadButton.clipsToBounds = true
         uniqueUnitValue.layer.cornerRadius = 20.0
         originalUnitValue.layer.cornerRadius = 20.0
+        print("View Did Load")
     }
     
-    override func viewDidLayoutSubviews() {
-        super.viewDidLayoutSubviews()
-        
-        print("Length button frame: \(lengthButton.frame)")  // Check the button size
-        print("Weight button frame: \(weightButton.frame)")
-        print("Time button frame: \(timeButton.frame)")
-        
-        // Ensure buttons are circular
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
         configureButton(button: lengthButton, imageName: "length")
         configureButton(button: weightButton, imageName: "weight")
         configureButton(button: timeButton, imageName: "time")
@@ -81,33 +77,44 @@ class AddViewController: UIViewController, PHPickerViewControllerDelegate, UITex
     
     private func configureButton(button: UIButton, imageName: String) {
         // Ensure the button is circular
-        button.layer.cornerRadius = button.frame.size.width / 2
         button.clipsToBounds = true
+
+        // Add a constraint to ensure the button remains a circle (equal width and height)
+        if button.constraints.first(where: { $0.firstAttribute == .width && $0.secondAttribute == .height }) == nil {
+            button.widthAnchor.constraint(equalTo: button.heightAnchor).isActive = true
+        }
         
-        // Clear any existing images
-        button.setImage(nil, for: .normal)
-        
+        // Clear any existing subviews
+        button.subviews.forEach { $0.removeFromSuperview() }
+
         // Create a UIImageView
         guard let image = UIImage(named: imageName)?.withRenderingMode(.alwaysOriginal) else {
             print("Image not found: \(imageName)")  // Debug log
             return
         }
-        
+
         let imageView = UIImageView(image: image)
         imageView.contentMode = .scaleAspectFill
-        let imageSize = button.frame.size.width
-        
-        imageView.frame = CGRect(x: (button.frame.size.width - imageSize) / 2,
-                                 y: (button.frame.size.height - imageSize) / 2,
-                                 width: imageSize,
-                                 height: imageSize)
-        
-        imageView.layer.cornerRadius = imageSize / 2
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        imageView.layer.cornerRadius = button.frame.size.width / 2
         imageView.clipsToBounds = true
-        
+
         button.addSubview(imageView)
+
+        // Set up Auto Layout constraints for the imageView
+        NSLayoutConstraint.activate([
+            imageView.centerXAnchor.constraint(equalTo: button.centerXAnchor),
+            imageView.centerYAnchor.constraint(equalTo: button.centerYAnchor),
+            imageView.widthAnchor.constraint(equalTo: button.widthAnchor),
+            imageView.heightAnchor.constraint(equalTo: button.heightAnchor)
+        ])
+
+        // Apply corner radius again to ensure circular shape after layout
+        button.layer.cornerRadius = button.frame.size.width / 2
+        button.layoutIfNeeded()
     }
-    
+
+
     @IBAction func uploadImages(){
         var configuration = PHPickerConfiguration()
         let filter = PHPickerFilter.images
@@ -157,7 +164,7 @@ class AddViewController: UIViewController, PHPickerViewControllerDelegate, UITex
         present(alert, animated: true, completion: nil)
     }
     
-    @IBAction func save(){
+    @IBAction func save() {
         guard let unitKey = unitName.text, !unitKey.isEmpty,
               let inputUniqueText = uniqueUnitValue.text,
               let inputUnique = Double(inputUniqueText),
@@ -167,25 +174,42 @@ class AddViewController: UIViewController, PHPickerViewControllerDelegate, UITex
             return
         }
         
+        // Check if the unit already exists in the database
         if realm.objects(ConversionData.self).filter("unitKey == %@", unitKey).first != nil {
             showAlert(message: "There exists a unit that is already named \(unitKey).")
             return
         }
         
-        let newConversionData = ConversionData()
-        let rate: Double = conversionAlgorithm.conversionRateCalculator(inputUniqueValue: inputUnique, inputOriginalValue: inputOriginal, originalUnitName: unitButton.titleLabel!.text!)
-        let convertTo: String = conversionAlgorithm.convertToKey(originalUnitInput: unitButton.titleLabel!.text!)
-        newConversionData.conInit(unitKey: unitKey, conversionRate: rate, convertToKey: convertTo)
-        //TODO fill convertToKey
+        // Resize the image before converting it to Data (if there is an image)
+        let resizedImage = inputImage.image?.resized(to: CGSize(width: 200, height: 200))  // Adjust target size as needed
+        let imageData: Data? = resizedImage?.pngData()
         
+        // Create a new ConversionData object
+        let newConversionData = ConversionData()
+        let rate: Double = conversionAlgorithm.conversionRateCalculator(
+            inputUniqueValue: inputUnique,
+            inputOriginalValue: inputOriginal,
+            originalUnitName: unitButton.titleLabel!.text!
+        )
+        
+        let convertTo: String = conversionAlgorithm.convertToKey(
+            originalUnitInput: unitButton.titleLabel!.text!
+        )
+        
+        newConversionData.conInit(unitKey: unitKey, conversionRate: rate, unitImageData: imageData, convertToKey: convertTo)
+        
+        // Add the new object to the conversion data array
         conversionDataArray.append(newConversionData)
         
+        // Save to Realm
         try! realm.write {
-            realm.add(conversionDataArray)
+            realm.add(newConversionData)
         }
         
         dismiss(animated: true)
     }
+
+
     
     func fetchConversionData() -> [ConversionData] {
         return Array(realm.objects(ConversionData.self))
@@ -250,4 +274,25 @@ class AddViewController: UIViewController, PHPickerViewControllerDelegate, UITex
         updateConversionRateLabel()
     }
     
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        textField.resignFirstResponder()
+        return true
+    }
 }
+
+extension UIImage {
+    func resized(to targetSize: CGSize) -> UIImage? {
+        let size = self.size
+        let widthRatio  = targetSize.width  / size.width
+        let heightRatio = targetSize.height / size.height
+        let newSize = CGSize(width: size.width * min(widthRatio, heightRatio), height: size.height * min(widthRatio, heightRatio))
+        
+        UIGraphicsBeginImageContextWithOptions(newSize, false, 0.0)
+        self.draw(in: CGRect(origin: .zero, size: newSize))
+        let newImage = UIGraphicsGetImageFromCurrentImageContext()
+        UIGraphicsEndImageContext()
+
+        return newImage
+    }
+}
+
